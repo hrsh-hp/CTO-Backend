@@ -91,19 +91,43 @@ class RelayRoomLog(BaseReport):
 # -------------------------------------------------------------------------
 # 3. Maintenance Report
 # -------------------------------------------------------------------------
-class MaintenanceReport(BaseReport):
-    """
-    Corresponds to MaintenanceForm.tsx / FORM-MA-05
-    """
-    report_date = models.DateField()
-    station_maintained = models.ForeignKey(Station, on_delete=models.PROTECT)
+class MaintenanceReport(models.Model):
+    MAINTENANCE_CHOICES = [
+        ('Point Maintenance', 'Point Maintenance'),
+        ('Signal Maintenance', 'Signal Maintenance'),
+        ('IPS/Power Supply', 'IPS/ Power Supply including battery maintenance'),
+        ('LC Gate Maintenance', 'LC gate Maintenance'),
+    ]
+
+    # Header Details
+    submission_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
     
-    maintenance_type = models.CharField(max_length=100) # Could be a Foreign Key if types are strictly defined
-    work_description = models.TextField()
+    # Staff Details
+    # Storing names as strings for simplicity in this demo, 
+    # but could be ForeignKeys to a Staff model if you have one.
+    staff_name = models.CharField(max_length=150, blank=True) 
+    
+    # Hierarchy (Using your existing Master Data models)
+    sectional_officer = models.ForeignKey(SectionalOfficer, on_delete=models.PROTECT)
+    csi_unit = models.ForeignKey(CSIUnit, on_delete=models.PROTECT)
+    designation = models.ForeignKey(Designation, on_delete=models.SET_NULL, null=True)
+    station = models.ForeignKey(Station, on_delete=models.PROTECT)
+
+    # Activity Details
+    maintenance_type = models.CharField(max_length=100, choices=MAINTENANCE_CHOICES)
+    
+    # Conditional Fields based on type
+    # For "Point Maintenance done (Nos.)"
+    asset_count = models.IntegerField(null=True, blank=True, help_text="Number of points maintained")
+    # For "LC gate Maintenance(LC gate no.)"
+    asset_id = models.CharField(max_length=50, null=True, blank=True, help_text="LC Gate Number")
+
+    section = models.CharField(max_length=50, help_text="e.g., ADI-SHB")
     remarks = models.TextField(blank=True)
 
     def __str__(self):
-        return f"Maint-{self.id} | {self.station_maintained}"
+        return f"{self.maintenance_type} at {self.station} on {self.submission_date}"
 
 # -------------------------------------------------------------------------
 # 4. IPS Report (Complex Matrix)

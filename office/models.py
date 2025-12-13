@@ -19,7 +19,7 @@ class CSIUnit(models.Model):
     name = models.CharField(max_length=100) # e.g. "ADI"
     sectional_officer = models.ForeignKey(
         SectionalOfficer, 
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='csi_units'
     )
     
@@ -39,7 +39,7 @@ class Station(models.Model):
     name = models.CharField(max_length=100)
     csi_unit = models.ForeignKey(
         CSIUnit, 
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='stations'
     )
 
