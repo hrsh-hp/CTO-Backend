@@ -35,7 +35,7 @@ class Station(models.Model):
     Physical Railway Stations (e.g., 'NDLS', 'ADI').
     Linked to a CSI Unit.
     """
-    code = models.CharField(max_length=10, unique=True) # e.g. "ADI"
+    code = models.CharField(max_length=50, unique=True) # e.g. "ADI"
     name = models.CharField(max_length=100)
     csi_unit = models.ForeignKey(
         CSIUnit, 

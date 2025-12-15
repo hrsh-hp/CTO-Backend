@@ -70,20 +70,22 @@ class RelayRoomLog(BaseReport):
     """
     Corresponds to InspectionForm.tsx / FORM-RR-02
     """
-    log_date = models.DateField()
-    location = models.ForeignKey(Station, on_delete=models.PROTECT)
+    log_date = models.DateField(db_column='date') # mapped to 'date' in frontend
+    
+    # We use SlugRelatedField in serializer, so ForeignKey is fine here.
+    location = models.ForeignKey(Station, on_delete=models.PROTECT, related_name='relay_logs')
     
     opening_time = models.TimeField()
     closing_time = models.TimeField()
     
     # Auth Details
-    opening_code = models.CharField(max_length=50) # Dropdown value
+    opening_code = models.CharField(max_length=50) 
     
-    # Generated serial numbers
+    # Serial numbers (Manual input from frontend)
     sn_opening = models.CharField(max_length=50)
     sn_closing = models.CharField(max_length=50)
     
-    reason_remarks = models.TextField(help_text="Reason for opening")
+    remarks = models.TextField(help_text="Reason for opening")
 
     def __str__(self):
         return f"Relay-{self.id} | {self.location} | {self.log_date}"
@@ -92,42 +94,40 @@ class RelayRoomLog(BaseReport):
 # 3. Maintenance Report
 # -------------------------------------------------------------------------
 class MaintenanceReport(models.Model):
-    MAINTENANCE_CHOICES = [
+    TYPE_CHOICES = [
         ('Point Maintenance', 'Point Maintenance'),
         ('Signal Maintenance', 'Signal Maintenance'),
-        ('IPS/Power Supply', 'IPS/ Power Supply including battery maintenance'),
-        ('LC Gate Maintenance', 'LC gate Maintenance'),
+        ('IPS/Power Supply', 'IPS/Power Supply'),
+        ('LC Gate Maintenance', 'LC Gate Maintenance'),
     ]
 
-    # Header Details
     submission_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
     
-    # Staff Details
-    # Storing names as strings for simplicity in this demo, 
-    # but could be ForeignKeys to a Staff model if you have one.
-    staff_name = models.CharField(max_length=150, blank=True) 
-    
-    # Hierarchy (Using your existing Master Data models)
+    # Relationships
     sectional_officer = models.ForeignKey(SectionalOfficer, on_delete=models.PROTECT)
     csi_unit = models.ForeignKey(CSIUnit, on_delete=models.PROTECT)
-    designation = models.ForeignKey(Designation, on_delete=models.SET_NULL, null=True)
-    station = models.ForeignKey(Station, on_delete=models.PROTECT)
 
-    # Activity Details
-    maintenance_type = models.CharField(max_length=100, choices=MAINTENANCE_CHOICES)
+    maintenance_type = models.CharField(max_length=100, choices=TYPE_CHOICES)
+
+    # Updated to match Frontend "assetNumbers" (e.g. "Pt-101, Pt-102")
+    asset_numbers = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True, 
+        help_text="List of Asset IDs (e.g. Pt-101, LC-42)"
+    )
+
+    section = models.CharField(max_length=100, help_text="Section Code (e.g. ADI-SHB)")
     
-    # Conditional Fields based on type
-    # For "Point Maintenance done (Nos.)"
-    asset_count = models.IntegerField(null=True, blank=True, help_text="Number of points maintained")
-    # For "LC gate Maintenance(LC gate no.)"
-    asset_id = models.CharField(max_length=50, null=True, blank=True, help_text="LC Gate Number")
-
-    section = models.CharField(max_length=50, help_text="e.g., ADI-SHB")
+    # Added to match Frontend "workDescription"
+    work_description = models.TextField(blank=True, help_text="Details of work carried out")
+    
     remarks = models.TextField(blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"{self.maintenance_type} at {self.station} on {self.submission_date}"
+        return f"{self.maintenance_type} - {self.section} ({self.submission_date})"
 
 # -------------------------------------------------------------------------
 # 4. IPS Report (Complex Matrix)

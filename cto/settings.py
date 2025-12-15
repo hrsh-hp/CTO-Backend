@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-drxh$=(x)zcri#1c_d-zoaotjv!s-h=+6pgw(e@utjdl=n2s0m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://nursery-enrollment-species-man.trycloudflare.com"
 ]
 
 

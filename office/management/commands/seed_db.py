@@ -1,5 +1,8 @@
+import pandas as pd
+import os
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from forms.models import IPSReport, MaintenanceReport, FailureReport, RelayRoomLog
 from office.models import (
     SectionalOfficer, CSIUnit, Station, Designation, 
     Manufacturer, FailureReason
@@ -12,6 +15,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Deleting old data...")
+        # Delete dependent reports first
+        IPSReport.objects.all().delete()
+        MaintenanceReport.objects.all().delete()
+        FailureReport.objects.all().delete()
+        RelayRoomLog.objects.all().delete()
+
         Station.objects.all().delete()
         CSIUnit.objects.all().delete()
         SectionalOfficer.objects.all().delete()
@@ -43,60 +52,56 @@ class Command(BaseCommand):
         ]
         for r in reasons: FailureReason.objects.get_or_create(text=r)
 
-        # 3. Hierarchy (Matches src/constants.ts)
-        hierarchy = [
-            {
-                "officer": "DSTE I",
-                "units": [
-                    { "csi": "ADI", "stations": ["ADI", "MAN", "VAT", "GER", "BJD"] },
-                    { "csi": "SBI", "stations": ["SBI", "KLL", "JKA", "KHDB", "CLDY", "CDK"] }
-                ]
-            },
-            {
-                "officer": "DSTE II",
-                "units": [
-                    { "csi": "VG", "stations": ["VG", "JTN", "SUNR"] },
-                    { "csi": "MSH", "stations": ["MSH", "UJA", "KMLI"] }
-                ]
-            },
-            {
-                "officer": "ADSTE ADI",
-                "units": [
-                    { "csi": "GIM", "stations": ["GIM", "BCOB", "SIOB"] }
-                ]
-            },
-            {
-                "officer": "ADSTE DHG",
-                "units": [
-                    { "csi": "DHG", "stations": ["DHG"] },
-                    { "csi": "MALB", "stations": ["MALB", "FL", "HALV"] },
-                    { "csi": "PNU", "stations": ["PNU", "DISA"] }
-                ]
-            },
-            {
-                "officer": "ADSTE RDHP",
-                "units": [
-                    { "csi": "RDHP", "stations": ["RDHP", "BLDI"] }
-                ]
-            }
-        ]
+        # 3. Hierarchy from Excel
+        file_path = '/home/harsh2006/Projects/Python/cto-app/cto/Officer and Staff wise station details.xlsx'
+        if not os.path.exists(file_path):
+            self.stdout.write(self.style.ERROR(f'File not found: {file_path}'))
+            return
 
-        for h in hierarchy:
-            # Generate a code from the name (e.g. "DSTE I" -> "DSTE_I")
-            code = h["officer"].replace(" ", "_").upper()
-            officer_obj = SectionalOfficer.objects.create(name=h["officer"], code=code)
+        try:
+            df = pd.read_excel(file_path, header=1)
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Error reading excel: {e}'))
+            return
+        
+        # Forward fill Section Officer and CSI
+        df['Section Officer'] = df['Section Officer'].ffill()
+        df['CSI'] = df['CSI'].ffill()
+        
+        # Drop rows where Station is NaN
+        df = df.dropna(subset=['Station'])
+
+        for index, row in df.iterrows():
+            officer_name = str(row['Section Officer']).strip()
+            csi_name = str(row['CSI']).strip()
+            station_name = str(row['Station']).strip()
             
-            for unit in h["units"]:
-                csi_obj = CSIUnit.objects.create(
-                    name=unit["csi"], 
-                    sectional_officer=officer_obj
-                )
-                
-                for stn_code in unit["stations"]:
-                    Station.objects.create(
-                        code=stn_code, 
-                        name=f"Station {stn_code}", 
-                        csi_unit=csi_obj
-                    )
+            if officer_name == 'nan' or csi_name == 'nan':
+                continue
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded database!'))
+            # Create or Get Sectional Officer
+            officer_code = officer_name.replace(" ", "_").replace("/", "_").upper()
+            officer_obj, _ = SectionalOfficer.objects.get_or_create(
+                name=officer_name,
+                defaults={'code': officer_code}
+            )
+
+            # Create or Get CSI Unit
+            csi_obj, _ = CSIUnit.objects.get_or_create(
+                name=csi_name,
+                sectional_officer=officer_obj
+            )
+
+            # Create Station
+            # Use station name as code, replacing spaces with underscores
+            station_code = station_name.replace(" ", "_").upper()
+            
+            # Check if station exists (to avoid duplicates if excel has duplicates)
+            if not Station.objects.filter(code=station_code).exists():
+                Station.objects.create(
+                    code=station_code,
+                    name=station_name,
+                    csi_unit=csi_obj
+                )
+
+        self.stdout.write(self.style.SUCCESS('Successfully seeded database from Excel!'))
