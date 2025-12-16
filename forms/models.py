@@ -168,3 +168,53 @@ class IPSEntry(models.Model):
     class Meta:
         # Ensure only one entry per Module+Company per Report
         unique_together = ('report', 'module_type', 'company')
+
+class ACFailureReport(BaseReport):
+    """
+    Corresponds to ACReportForm.tsx / FORM-AC-04
+    """
+    # Location Details
+    location_code = models.CharField(max_length=50) # Station/Location Code
+    
+    # Asset Details
+    total_ac_units = models.IntegerField(default=0)
+    ac_type = models.CharField(max_length=20, choices=[('Split', 'Split'), ('Window', 'Window')])
+    
+    # Failure Details
+    total_fail_count = models.CharField(max_length=20) # '1', '2', ... 'All'
+    failure_date_time = models.DateTimeField()
+    
+    # Status
+    under_warranty = models.CharField(max_length=3, choices=[('Yes', 'Yes'), ('No', 'No')])
+    under_amc = models.CharField(max_length=3, choices=[('Yes', 'Yes'), ('No', 'No')])
+    
+    remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"AC-Fail-{self.id} | {self.location_code}"
+    
+class MovementReport(models.Model):
+    # Staff Details
+    date = models.DateField()
+    name = models.CharField(max_length=100)
+    designation = models.CharField(max_length=50)  # e.g., CSI, SSE, JE
+    
+    # Hierarchy
+    sectional_officer = models.CharField(max_length=100)
+    csi = models.CharField(max_length=100)
+    
+    # Movement Details
+    posting_station = models.CharField(max_length=50)  # The station where staff is posted
+    to_station = models.CharField(max_length=100)      # Destination (can be 'Other' or specific station)
+    reason = models.CharField(max_length=255)          # Selected reason from dropdown
+    remarks = models.TextField(blank=True, null=True)  # Optional details
+    
+    # Metadata
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-submitted_at']
+        verbose_name = "SI/CSI Movement Report"
+
+    def __str__(self):
+        return f"{self.name} ({self.designation}) -> {self.to_station} on {self.date}"

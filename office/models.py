@@ -30,6 +30,25 @@ class CSIUnit(models.Model):
     def __str__(self):
         return f"{self.name} (under {self.sectional_officer})"
 
+class SIUnit(models.Model):
+    """
+    Represents a Sectional Inspector Unit (e.g., 'SI VTA').
+    Linked to a CSI Unit.
+    """
+    name = models.CharField(max_length=100)
+    csi_unit = models.ForeignKey(
+        CSIUnit,
+        on_delete=models.CASCADE,
+        related_name='si_units'
+    )
+
+    class Meta:
+        verbose_name = "SI Unit"
+        unique_together = ('name', 'csi_unit')
+
+    def __str__(self):
+        return f"{self.name} (under {self.csi_unit.name})"
+
 class Station(models.Model):
     """
     Physical Railway Stations (e.g., 'NDLS', 'ADI').
@@ -40,6 +59,13 @@ class Station(models.Model):
     csi_unit = models.ForeignKey(
         CSIUnit, 
         on_delete=models.CASCADE,
+        related_name='stations'
+    )
+    si_unit = models.ForeignKey(
+        SIUnit,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='stations'
     )
 

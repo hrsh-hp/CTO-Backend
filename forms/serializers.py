@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import IPSReport, IPSEntry, IPSModuleType, IPSCompany, MaintenanceReport, RelayRoomLog
+from .models import ACFailureReport, FailureReport, IPSReport, IPSEntry, IPSModuleType, IPSCompany, MaintenanceReport, MovementReport, RelayRoomLog
 from office.models import CSIUnit, SectionalOfficer, Designation, Station
 
 class IPSEntrySerializer(serializers.ModelSerializer):
@@ -148,3 +148,56 @@ class RelayRoomLogSerializer(serializers.ModelSerializer):
             'opening_time', 'closing_time', 'sn_opening', 
             'sn_closing', 'opening_code', 'remarks', 'submitted_at'
         ]
+
+class ACFailureReportSerializer(serializers.ModelSerializer):
+    # Map frontend 'csi' -> backend 'csi_unit'
+    csi = serializers.SlugRelatedField(
+        source='csi_unit',
+        slug_field='name',
+        queryset=CSIUnit.objects.all()
+    )
+    
+    # Map frontend 'sectional_officer' (name) -> backend ID
+    sectional_officer = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=SectionalOfficer.objects.all()
+    )
+
+    # If frontend sends 'reporter_designation' as string title
+    reporter_designation = serializers.SlugRelatedField(
+        slug_field='title',
+        queryset=Designation.objects.all(),
+        allow_null=True,
+        required=False
+    )
+
+    class Meta:
+        model = ACFailureReport
+        fields = [
+            'id', 'location_code', 'total_ac_units', 'ac_type',
+            'total_fail_count', 'failure_date_time', 'under_warranty',
+            'under_amc', 'remarks', 'csi', 'sectional_officer',
+            'reporter_name', 'reporter_designation', 'created_at', 'status'
+        ]
+
+    def create(self, validated_data):
+        # Auto-populate reporter details if available in context
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            validated_data['submitted_by'] = request.user
+            
+        return super().create(validated_data)
+    
+class FailureReportSerializer(serializers.ModelSerializer):
+    # Handle 'reason' as a list of strings for the frontend
+    reason = serializers.JSONField() 
+
+    class Meta:
+        model = FailureReport
+        fields = '__all__'
+
+class MovementReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovementReport
+        fields = '__all__'
+        # submitted_at is read-only by default

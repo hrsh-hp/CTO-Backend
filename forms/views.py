@@ -10,20 +10,28 @@ from io import BytesIO
 # Create your views here.
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import IPSReport, MaintenanceReport, RelayRoomLog
-from .serializers import IPSReportSerializer, MaintenanceReportSerializer, RelayRoomLogSerializer
+from .models import ACFailureReport, FailureReport, IPSReport, MaintenanceReport, MovementReport, RelayRoomLog
+from .serializers import ACFailureReportSerializer, FailureReportSerializer, IPSReportSerializer, MaintenanceReportSerializer, MovementReportSerializer, RelayRoomLogSerializer
 from django_filters import rest_framework as django_filters
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 class RelayRoomLogFilter(django_filters.FilterSet):
     csi = django_filters.CharFilter(field_name='csi_unit__name', lookup_expr='exact')
     sectional_officer = django_filters.CharFilter(field_name='sectional_officer__name', lookup_expr='exact')
     location__code = django_filters.CharFilter(field_name='location__code', lookup_expr='exact')
-    log_date__gte = django_filters.DateFilter(field_name='log_date', lookup_expr='gte')
-    log_date__lte = django_filters.DateFilter(field_name='log_date', lookup_expr='lte')
+    date = django_filters.DateFilter(field_name='log_date')
 
     class Meta:
         model = RelayRoomLog
-        fields = ['csi', 'sectional_officer', 'location__code']
+        fields = ['location']
+
+class ACFailureReportFilter(django_filters.FilterSet):
+    csi = django_filters.CharFilter(field_name='csi_unit__name', lookup_expr='exact')
+    sectional_officer = django_filters.CharFilter(field_name='sectional_officer__name', lookup_expr='exact')
+    
+    class Meta:
+        model = ACFailureReport
+        fields = ['location_code', 'under_warranty', 'under_amc']
 
 class MaintenanceReportViewSet(viewsets.ModelViewSet):
     queryset = MaintenanceReport.objects.all().order_by('-submission_date')
@@ -577,3 +585,40 @@ class RelayRoomLogViewSet(viewsets.ModelViewSet):
         
         wb.save(response)
         return response
+    
+class ACFailureReportViewSet(viewsets.ModelViewSet):
+    queryset = ACFailureReport.objects.all().order_by('created_at')
+    serializer_class = ACFailureReportSerializer
+    filterset_class = ACFailureReportFilter
+    
+class FailureReportViewSet(viewsets.ModelViewSet):
+    queryset = FailureReport.objects.all().order_by('failure_datetime', 'created_at')
+    serializer_class = FailureReportSerializer
+
+    def perform_create(self, serializer):
+        # Auto-calculate status or other fields if needed
+        serializer.save(status='Open')
+
+class MovementReportViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for Daily SI/CSI Movement Reports.
+    Endpoint: /api/forms/movement-reports/
+    """
+    queryset = MovementReport.objects.all()
+    serializer_class = MovementReportSerializer
+    
+    # Enable filtering and searching
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    
+    # Allow filtering by specific fields (matches the Dashboard filters)
+    filterset_fields = {
+        'date': ['exact', 'gte', 'lte'],  # Date ranges
+        'sectional_officer': ['exact'],
+        'csi': ['exact'],
+        'posting_station': ['exact'],
+    }
+    
+    # Allow searching by text fields
+    search_fields = ['name', 'to_station', 'reason', 'remarks']
+    
+    ordering_fields = ['date', 'submitted_at']

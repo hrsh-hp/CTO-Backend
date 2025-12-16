@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     SectionalOfficer, CSIUnit, Station, Designation,
-    Manufacturer, FailureReason, IPSModuleType, IPSCompany
+    Manufacturer, FailureReason, IPSModuleType, IPSCompany, SIUnit
 )
 
 # --- Basic Serializers ---
@@ -26,15 +26,21 @@ class FailureReasonSerializer(serializers.ModelSerializer):
         model = FailureReason
         fields = ['id', 'text']
 
+class SIUnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SIUnit
+        fields = ['id', 'name']
+
 # --- Hierarchy / Nested Serializers ---
 
 class CSIUnitNestedSerializer(serializers.ModelSerializer):
     # Nesting Stations inside CSI
     stations = StationSerializer(many=True, read_only=True)
+    si_units = SIUnitSerializer(many=True, read_only=True)
 
     class Meta:
         model = CSIUnit
-        fields = ['id', 'name', 'stations']
+        fields = ['id', 'name', 'stations', 'si_units']
 
 class HierarchySerializer(serializers.ModelSerializer):
     """

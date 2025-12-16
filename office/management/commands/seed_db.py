@@ -2,10 +2,10 @@ import pandas as pd
 import os
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from forms.models import IPSReport, MaintenanceReport, FailureReport, RelayRoomLog
+from forms.models import IPSReport, MaintenanceReport, FailureReport, RelayRoomLog, ACFailureReport
 from office.models import (
     SectionalOfficer, CSIUnit, Station, Designation, 
-    Manufacturer, FailureReason
+    Manufacturer, FailureReason, SIUnit
 )
 
 User = get_user_model()
@@ -20,6 +20,7 @@ class Command(BaseCommand):
         MaintenanceReport.objects.all().delete()
         FailureReport.objects.all().delete()
         RelayRoomLog.objects.all().delete()
+        ACFailureReport.objects.all().delete()
 
         Station.objects.all().delete()
         CSIUnit.objects.all().delete()
@@ -104,4 +105,33 @@ class Command(BaseCommand):
                     csi_unit=csi_obj
                 )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded database from Excel!'))
+        # 4. Seed SI Units
+        si_mapping = {
+          "ADI RRI": ["ADI RRI"],
+          "ADI": ["SI VTA", "SI ASV", "SI HMT"],
+          "SBI": ["SI SHB", "SI SBI", "SI SAU", "SI VG"],
+          "KLL": ["SI KLL", "SI GNC", "SI UMN"],
+          "MSH Br": ["SI Br. MSH", "MSH RRI", "SI PTN"],
+          "MSH N": ["SI KTRD", "SI PNU", "SI SID", "SI N MSH", "PNU RRI"],
+          "PNU": ["SI Br. PNU", "SI DEOR", "SI BLDI"],
+          "RDHP": ["SI RDHP", "SI SNLR", "SI RRI"],
+          "GIM": ["SI AI", "SI BHUJ", "SI Br.GIM"],
+          "SIOB Br": ["SI BCOB", "SIOB/BR", "SI AAR"],
+          "DHG": ["SI DHG RRI", "SI Br DHG", "SI HVD"],
+          "MALB": ["SI MALB", "SI SIOB"],
+          "VG": ["SI VG RRI", "SI BAJN", "SI JTX", "SI BKD"]
+        }
+
+        self.stdout.write("Seeding SI Units...")
+        for csi_name, si_list in si_mapping.items():
+            # Find the CSI Unit. Note: CSI names in DB might differ slightly from this list if Excel was different.
+            csi_units = CSIUnit.objects.filter(name=csi_name)
+            if not csi_units.exists():
+                self.stdout.write(self.style.WARNING(f"CSI Unit '{csi_name}' not found for SI seeding."))
+                continue
+            
+            for csi_obj in csi_units:
+                for si_name in si_list:
+                    SIUnit.objects.get_or_create(name=si_name, csi_unit=csi_obj)
+
+        self.stdout.write(self.style.SUCCESS('Successfully seeded database from Excel and SI Units!'))
