@@ -194,27 +194,49 @@ class ACFailureReport(BaseReport):
         return f"AC-Fail-{self.id} | {self.location_code}"
     
 class MovementReport(models.Model):
-    # Staff Details
-    date = models.DateField()
+    # Existing fields
     name = models.CharField(max_length=100)
-    designation = models.CharField(max_length=50)  # e.g., CSI, SSE, JE
-    
-    # Hierarchy
-    sectional_officer = models.CharField(max_length=100)
+    date = models.DateField()
+    sectional_officer = models.CharField(max_length=100, blank=True, null=True)
     csi = models.CharField(max_length=100)
     
-    # Movement Details
-    posting_station = models.CharField(max_length=50)  # The station where staff is posted
-    to_station = models.CharField(max_length=100)      # Destination (can be 'Other' or specific station)
-    reason = models.CharField(max_length=255)          # Selected reason from dropdown
-    remarks = models.TextField(blank=True, null=True)  # Optional details
+    # Updated Designations to hold combined string like "SSE/SIG/ADI"
+    designation = models.CharField(max_length=100) 
+
+    # NEW FIELDS matching the Excel format
+    move_from = models.CharField(max_length=100, help_text="Location moving from or Leave status")
+    move_to = models.CharField(max_length=100, help_text="Location moving to")
+    work_done = models.TextField(help_text="Description of work done")
+
+    # Meta fields
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.date}"
+    
+
+class JPCReport(models.Model):
+    # Location & Date
+    station = models.CharField(max_length=100) # From dropdown list
+    jpc_date = models.DateField()
+    
+    # Point Data
+    total_points = models.IntegerField()
+    inspected_today = models.IntegerField()
+    total_inspected_cum = models.IntegerField()
+    pending_points = models.IntegerField()
+    
+    # Authority
+    inspection_by = models.CharField(max_length=10, choices=[('SI', 'SI'), ('CSI', 'CSI')])
+    inspector_name = models.CharField(max_length=100)
     
     # Metadata
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-date', '-submitted_at']
-        verbose_name = "SI/CSI Movement Report"
+        ordering = ['-jpc_date', '-submitted_at']
+        verbose_name = "JPC Inspection Report"
 
     def __str__(self):
-        return f"{self.name} ({self.designation}) -> {self.to_station} on {self.date}"
+        return f"JPC {self.station} - {self.jpc_date}"

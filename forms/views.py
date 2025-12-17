@@ -10,8 +10,8 @@ from io import BytesIO
 # Create your views here.
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import ACFailureReport, FailureReport, IPSReport, MaintenanceReport, MovementReport, RelayRoomLog
-from .serializers import ACFailureReportSerializer, FailureReportSerializer, IPSReportSerializer, MaintenanceReportSerializer, MovementReportSerializer, RelayRoomLogSerializer
+from .models import ACFailureReport, FailureReport, IPSReport, JPCReport, MaintenanceReport, MovementReport, RelayRoomLog
+from .serializers import ACFailureReportSerializer, FailureReportSerializer, IPSReportSerializer, JPCReportSerializer, MaintenanceReportSerializer, MovementReportSerializer, RelayRoomLogSerializer
 from django_filters import rest_framework as django_filters
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -615,10 +615,140 @@ class MovementReportViewSet(viewsets.ModelViewSet):
         'date': ['exact', 'gte', 'lte'],  # Date ranges
         'sectional_officer': ['exact'],
         'csi': ['exact'],
-        'posting_station': ['exact'],
     }
     
     # Allow searching by text fields
-    search_fields = ['name', 'to_station', 'reason', 'remarks']
+    search_fields = ['name', 'move_to', 'work_done']
     
     ordering_fields = ['date', 'submitted_at']
+
+def export_movement_excel(request):
+    # 1. Filter Data based on Request Parameters
+    queryset = MovementReport.objects.all().order_by('date', 'sectional_officer', 'csi')
+
+    # Apply Filters from Dashboard
+    start_date = request.GET.get('date__gte')
+    end_date = request.GET.get('date__lte')
+    csi_filter = request.GET.get('csi')
+    officer_filter = request.GET.get('sectional_officer')
+
+    if start_date:
+        queryset = queryset.filter(date__gte=start_date)
+    if end_date:
+        queryset = queryset.filter(date__lte=end_date)
+    if csi_filter:
+        queryset = queryset.filter(csi=csi_filter)
+    if officer_filter:
+        queryset = queryset.filter(sectional_officer=officer_filter)
+
+    # 2. Setup Workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Daily Movement"
+
+    # Styling Constants
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                         top=Side(style='thin'), bottom=Side(style='thin'))
+    header_font = Font(bold=True, size=11)
+    center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
+    header_fill = PatternFill(start_color="FFE699", end_color="FFE699", fill_type="solid") # Light Orange from image
+
+    # 3. Create Main Header Row
+    # Merging cells A1 to F1 for the main title
+    ws.merge_cells('A1:F1')
+    title_cell = ws['A1']
+    
+    # Dynamic Title Date
+    date_str = datetime.now().strftime("%d.%m.%Y")
+    if start_date:
+        date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+        date_str = date_obj.strftime("%d.%m.%Y")
+    
+    title_cell.value = f"Daily movement of SSE & JE Signal of ADI-Division as on Date :{date_str}"
+    title_cell.font = Font(bold=True, size=12)
+    title_cell.alignment = center_align
+    title_cell.fill = header_fill
+    title_cell.border = thin_border
+
+    # 4. Create Column Headers (Row 2 & 3)
+    # Row 2
+    ws.merge_cells('A2:A3') # Sr No
+    ws['A2'] = "Sr. No."
+    
+    ws.merge_cells('B2:B3') # Name
+    ws['B2'] = "Name"
+    
+    ws.merge_cells('C2:C3') # Designation
+    ws['C2'] = "Designation"
+    
+    ws.merge_cells('D2:E2') # Movement (Spans 2 columns)
+    ws['D2'] = "Movement"
+    
+    ws.merge_cells('F2:F3') # Work Done
+    ws['F2'] = "Work Done"
+
+    # Row 3 (Sub-headers for Movement)
+    ws['D3'] = "From"
+    ws['E3'] = "To"
+
+    # Apply Styling to Header Rows (A2 to F3)
+    for row in ws.iter_rows(min_row=2, max_row=3, min_col=1, max_col=6):
+        for cell in row:
+            cell.font = header_font
+            cell.alignment = center_align
+            cell.border = thin_border
+            # Only apply fill if it's not the blank merged cells
+            cell.fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
+
+    # 5. Populate Data
+    row_num = 4
+    for idx, report in enumerate(queryset, 1):
+        ws.cell(row=row_num, column=1, value=idx).alignment = center_align
+        ws.cell(row=row_num, column=2, value=report.name).alignment = left_align
+        ws.cell(row=row_num, column=3, value=report.designation).alignment = center_align
+        ws.cell(row=row_num, column=4, value=report.move_from).alignment = center_align
+        ws.cell(row=row_num, column=5, value=report.move_to).alignment = center_align
+        ws.cell(row=row_num, column=6, value=report.work_done).alignment = left_align
+
+        # Apply borders to data cells
+        for col in range(1, 7):
+            ws.cell(row=row_num, column=col).border = thin_border
+        
+        row_num += 1
+
+    # 6. Adjust Column Widths
+    ws.column_dimensions['A'].width = 8   # Sr No
+    ws.column_dimensions['B'].width = 25  # Name
+    ws.column_dimensions['C'].width = 20  # Designation
+    ws.column_dimensions['D'].width = 15  # From
+    ws.column_dimensions['E'].width = 15  # To
+    ws.column_dimensions['F'].width = 60  # Work Done
+
+    # 7. Generate Response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="Movement_Report_{date_str}.xlsx"'
+    wb.save(response)
+    return response
+
+class JPCReportViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for JPC Done Reports.
+    Endpoint: /api/forms/jpc-reports/
+    """
+    queryset = JPCReport.objects.all()
+    serializer_class = JPCReportSerializer
+    
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    
+    # Filtering options matching the Dashboard
+    filterset_fields = {
+        'station': ['exact'],
+        'jpc_date': ['exact', 'gte', 'lte'],
+        'inspection_by': ['exact'],
+    }
+    
+    search_fields = ['station', 'inspector_name']
+    ordering_fields = ['jpc_date', 'submitted_at']

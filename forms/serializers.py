@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ACFailureReport, FailureReport, IPSReport, IPSEntry, IPSModuleType, IPSCompany, MaintenanceReport, MovementReport, RelayRoomLog
+from .models import ACFailureReport, FailureReport, IPSReport, IPSEntry, IPSModuleType, IPSCompany, JPCReport, MaintenanceReport, MovementReport, RelayRoomLog
 from office.models import CSIUnit, SectionalOfficer, Designation, Station
 
 class IPSEntrySerializer(serializers.ModelSerializer):
@@ -201,3 +201,8 @@ class MovementReportSerializer(serializers.ModelSerializer):
         model = MovementReport
         fields = '__all__'
         # submitted_at is read-only by default
+
+class JPCReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JPCReport
+        fields = '__all__'
