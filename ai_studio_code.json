@@ -1,0 +1,356 @@
+{
+  "ADSTE/ ADI": {
+    "ADI": {
+      "VTA": {
+        "stn": "VTA",
+        "stations": {
+          "VATVA": "VTA",
+          "KANKARIA": "KKEC"
+        }
+      },
+      "ASV": {
+        "stn": "ASV",
+        "stations": {
+          "ASARVA": "ASV",
+          "NARODA": "NRD",
+          "DABHODA": "DBO",
+          "NANDOL DAHEGAM": "NHM",
+          "RAKHIYAL": "RKH"
+        }
+      },
+      "HMT": {
+        "stn": "HMT",
+        "stations": {
+          "TOD": "TOD",
+          "PRATIJ": "PRJ",
+          "SONASAN": "SNSN",
+          "HIMMATNAGAR": "HMT",
+          "IDAR": "IDAR",
+          "KHEDBHRMA": "KDBM"
+        }
+      }
+    },
+    "ADI RRI": {
+      "Shift Duty": {
+        "stn": "ADI",
+        "stations": {
+          "AHMEDABAD": "ADI RRI"
+        }
+      }
+    }
+  },
+  "DSTE-1": {
+    "SBI": {
+      "SBI-I": {
+        "stn": "SBI-I",
+        "stations": {
+          "SABARMATI 'A'": "SBIB",
+          "SABARMATI (SBIB)": "SBIB",
+          "SABARMATI-E": "SBT E",
+          "SABARMATI-F": "SBTF"
+        }
+      },
+      "SBI-II": {
+        "stn": "SBI-II",
+        "stations": {
+          "SABARMATI 'D'": "SBID",
+          "CHANDLODIYA 'A'": "CLDY A",
+          "CHANDLODIYA 'B'": "CLDY B"
+        }
+      },
+      "SAU": {
+        "stn": "SAU",
+        "stations": {
+          "AMBLI ROAD": "ABD",
+          "GORAGHUMA": "GGM",
+          "SANAND": "SAU",
+          "CHHARODI": "CE",
+          "VIROCHAN NAGAR": "VCN",
+          "JAKHWADA": "JKA"
+        }
+      }
+    }
+  },
+  "DSTE-2": {
+    "KLL": {
+      "KHD": {
+        "stn": "KHD",
+        "stations": {
+          "KHODIYAR": "KHD",
+          "GANDHINAGAR": "GNC",
+          "ADRAJMOTI": "AJM"
+        }
+      },
+      "KLL": {
+        "stn": "KLL",
+        "stations": {
+          "VIJAPUR (VJF)": "VJF",
+          "KALOL": "KLL",
+          "KADI": "KADI",
+          "JHULASAN": "JUL",
+          "DANGARWA": "DNW"
+        }
+      },
+      "UMN": {
+        "stn": "UMN",
+        "stations": {
+          "AMBLIYASAN": "UMN",
+          "JAGUDAN": "JDN"
+        }
+      }
+    }
+  },
+  "ADSTE/ MSH": {
+    "MSH Br": {
+      "3- SI at RRI": {
+        "stn": "MSH RRI",
+        "stations": {
+          "MAHESANA": "MSH RRI"
+        }
+      },
+      "KTRD": {
+        "stn": "KTRD",
+        "stations": {
+          "LINCH": "LCH",
+          "JOTANA": "JTN",
+          "KATOSAN ROAD (KTRD)": "KTRD",
+          "DETROJ": "DTJ",
+          "BHANKODA": "BKD",
+          "JAKSI": "JKS"
+        }
+      },
+      "MSH": {
+        "stn": "MSH",
+        "stations": {
+          "DHINOJ (DHJ)": "DHJ",
+          "RANUJ (RUJ)": "RUJ"
+        }
+      },
+      "PTN": {
+        "stn": "PTN",
+        "stations": {
+          "PATAN (PTN)": "PTN",
+          "KHALIPUR (KHPR)": "KHPR",
+          "KANSA (KASA)": "KASA",
+          "WAYAD (WAAD)": "WAAD",
+          "SIHORI (SIHI)": "SIHI"
+        }
+      }
+    },
+    "MSH N": {
+      "MSH N": {
+        "stn": "MSH N",
+        "stations": {
+          "BHANDU M": "BHU",
+          "VISNAGAR": "VNG",
+          "VADNAGAR": "VDG",
+          "KHERALU": "KRU",
+          "VARETHA": "VTDI"
+        }
+      },
+      "G-RIDE (Maint)": {
+        "stn": "MSH N",
+        "stations": {
+          "BECHRAJI": "BHRJ",
+          "CHANSMA": "CSMA"
+        }
+      },
+      "SID": {
+        "stn": "SID",
+        "stations": {
+          "UNJHA": "UJA",
+          "KAMLI": "KMLI",
+          "SIDHPUR": "SID"
+        }
+      },
+      "PNU-II": {
+        "stn": "PNU-II",
+        "stations": {
+          "DHAREWADA": "DRW",
+          "CHHAPI": "CHP",
+          "UMARDASHI": "UM"
+        }
+      }
+    }
+  },
+  "ADSTE/ RDHP": {
+    "PNU": {
+      "PNU": {
+        "stn": "PNU",
+        "stations": {
+          "PALANPUR": "PNU",
+          "CHADOTAR (CDQ)": "CDQ"
+        }
+      },
+      "BLDI": {
+        "stn": "BLDI",
+        "stations": {
+          "CHANDISAR (CDS)": "CDS",
+          "DISA": "DISA",
+          "LORWADA (LW)": "LW",
+          "BHILDI": "BLDI"
+        }
+      },
+      "DEOR": {
+        "stn": "DEOR",
+        "stations": {
+          "JASALI (JSI)": "JSI",
+          "DHANAKWADA (DKW)": "DKW",
+          "DIYODAR (DEOR)": "DEOR"
+        }
+      }
+    },
+    "RDHP": {
+      "RDHP (Vacant)": {
+        "stn": "RDHP",
+        "stations": {
+          "MITHA (MITA)": "MITA",
+          "BHABHAR (BAH)": "BAH",
+          "DEVGAM (DVGM)": "DVGM",
+          "RADHANPUR (RDHP)": "RDHP",
+          "PIPLEE (PLE)": "PLE",
+          "VARAHI (VRX)": "VRX"
+        }
+      },
+      "SNLR": {
+        "stn": "SNLR",
+        "stations": {
+          "VAGHPURA (VU)": "VU",
+          "CHHANSARA (CASA)": "CASA",
+          "SANTALPUR (SNLR)": "SNLR",
+          "GARAMADI (GM)": "GM",
+          "PIPRALA (PFL)": "PFL"
+        }
+      },
+      "AAR": {
+        "stn": "AAR",
+        "stations": {
+          "LAKHPAT (LAA)": "LAA",
+          "ADESAR (AAR)": "AAR"
+        }
+      },
+      "SIOB Br": {
+        "stn": "SIOB Br",
+        "stations": {
+          "BHUTAKIYA BHIMASAR (BUBR)": "BUBR",
+          "PADAMPUR (PDF)": "PDF",
+          "KIDIYANAGAR (KYG)": "KYG",
+          "CHITROD (COE)": "COE",
+          "SHIVLAKHA (SIA)": "SIA",
+          "LAKADIYA (LKZ)": "LKZ"
+        }
+      }
+    }
+  },
+  "ADSTE/ DHG": {
+    "VG": {
+      "VG": {
+        "stn": "VG",
+        "stations": {
+          "VIRAMGAM": "VG",
+          "JHUND": "JN",
+          "SADLA": "SADL",
+          "BAJANA": "BAJN"
+        }
+      },
+      "JTX": {
+        "stn": "JTX",
+        "stations": {
+          "JATPIPLI": "JTX",
+          "VASADVA": "VSV"
+        }
+      }
+    },
+    "DHG": {
+      "DHG-I": {
+        "stn": "DHG-I",
+        "stations": {
+          "DHRANGDHRA": "DHG",
+          "GHANSHYAMGARH": "GSY"
+        }
+      },
+      "DHG-II": {
+        "stn": "DHG-II",
+        "stations": {
+          "CHULI": "CUL",
+          "SUKHPUR": "SUK"
+        }
+      },
+      "HVD": {
+        "stn": "HVD",
+        "stations": {
+          "HALVAD": "HVD",
+          "DHANALA": "DHNL",
+          "DEVALIA": "DVY",
+          "KHAKHRECHI": "KHXB"
+        }
+      }
+    },
+    "MALB": {
+      "MALB": {
+        "stn": "MALB",
+        "stations": {
+          "WADHARWA": "WDHR",
+          "MALIYA MIYANA": "MALB"
+        }
+      },
+      "SIOB": {
+        "stn": "SIOB",
+        "stations": {
+          "SURBARI": "SRBR",
+          "KATARIA": "KATR",
+          "SAMAKHIALI": "SIOB"
+        }
+      }
+    }
+  },
+  "ADSTE/ GIM": {
+    "GIM": {
+      "BCOB": {
+        "stn": "BCOB",
+        "stations": {
+          "VONDH": "VONB",
+          "BHACHAU": "BCOB",
+          "CHIRAI": "CHIB"
+        }
+      },
+      "GIM-I": {
+        "stn": "GIM-I",
+        "stations": {
+          "BHIMASAR": "BMSR",
+          "GIM BLOCK CAB (GIMC)": "GIMC",
+          "SHIRVA": "SRVA"
+        }
+      },
+      "GIM-II": {
+        "stn": "GIM-II",
+        "stations": {
+          "GANDHIDHAM (GIMB)": "GIMB",
+          "GIM -A": "GIM OC A"
+        }
+      },
+      "AI": {
+        "stn": "AI",
+        "stations": {
+          "ADIPUR": "AI",
+          "ANJAR": "AJE",
+          "RATNAL": "RUT",
+          "KUKMA": "KEMA"
+        }
+      },
+      "BHUJ": {
+        "stn": "BHUJ",
+        "stations": {
+          "BHUJ": "BVJ",
+          "SUKHPUR (SUKP)": "SUKP",
+          "DESHALPAR (DSLP)": "DSLP",
+          "SANOSARA (SNSR)": "SNSR",
+          "MOTHALA (MTLA)": "MTLA",
+          "KOTHARA (QTR)": "QTR",
+          "NALIYA CANT (NLC)": "NLC",
+          "NALIYA (NLY)": "vhk"
+        }
+      }
+    }
+  }
+}

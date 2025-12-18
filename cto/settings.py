@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,13 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-drxh$=(x)zcri#1c_d-zoaotjv!s-h=+6pgw(e@utjdl=n2s0m'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-me')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', '0') == '1'
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
 
 # Application definition
@@ -47,7 +46,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://nursery-enrollment-species-man.trycloudflare.com"
-    
+         
 ]
 
 
@@ -68,7 +67,7 @@ ROOT_URLCONF = 'cto.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [TEMPLATES_DIR := BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,12 +85,35 @@ WSGI_APPLICATION = 'cto.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+
+if DATABASE_URL.startswith('postgres://') or DATABASE_URL.startswith('postgresql://'):
+    # No extra dependency needed: Django supports Postgres via psycopg2.
+    # DATABASE_URL example: postgres://user:pass@db:5432/dbname
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+    from urllib.parse import urlparse
+
+    u = urlparse(DATABASE_URL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': (u.path or '').lstrip('/'),
+            'USER': u.username or '',
+            'PASSWORD': u.password or '',
+            'HOST': u.hostname or 'localhost',
+            'PORT': str(u.port or 5432),
+        }
     }
-}
+else:
+    # Local/dev fallback
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -129,10 +151,76 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Allow frontend domain
-ALLOWED_HOSTS = ['sitctoadi.co.in', 'www.sitctoadi.co.in']
+# Note: ALLOWED_HOSTS is configured above from env.
+
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+# In production we write logs to a file so you can tail them on the server,
+# *and* to stdout so `docker logs` still works.
+
+LOG_DIR = Path(os.environ.get('LOG_DIR', '/var/log/cto'))
+LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    # If the filesystem is read-only or permission denied, fall back to stdout.
+    pass
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'django.log'),
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'delay': True,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': LOG_LEVEL,
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'gunicorn.error': {
+            'handlers': ['console', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'gunicorn.access': {
+            'handlers': ['console', 'file'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+    },
+}

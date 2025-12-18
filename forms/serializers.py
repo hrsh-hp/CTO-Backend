@@ -51,7 +51,7 @@ class IPSReportSerializer(serializers.ModelSerializer):
             
             # Auto-populate reporter_name if not provided
             # User requested: "CSI-<Station>" format
-            if 'reporter_name' not in validated_data:
+            if 'name' not in validated_data:
                 validated_data['reporter_name'] = f"CSI-{csi_unit.name}"
                 # reporter_designation is a ForeignKey, so we can't assign a string. 
                 # Leaving it null is fine as it is nullable.

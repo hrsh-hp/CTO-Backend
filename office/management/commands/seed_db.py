@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import json
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from forms.models import IPSReport, MaintenanceReport, FailureReport, RelayRoomLog, ACFailureReport
@@ -23,6 +24,7 @@ class Command(BaseCommand):
         ACFailureReport.objects.all().delete()
 
         Station.objects.all().delete()
+        SIUnit.objects.all().delete()
         CSIUnit.objects.all().delete()
         SectionalOfficer.objects.all().delete()
         Designation.objects.all().delete()
@@ -53,85 +55,55 @@ class Command(BaseCommand):
         ]
         for r in reasons: FailureReason.objects.get_or_create(text=r)
 
-        # 3. Hierarchy from Excel
-        file_path = '/home/harsh2006/Projects/Python/cto-app/cto/Officer and Staff wise station details.xlsx'
-        if not os.path.exists(file_path):
-            self.stdout.write(self.style.ERROR(f'File not found: {file_path}'))
+        # 3. Hierarchy from JSON
+        json_file_path = '/home/harsh2006/Projects/Python/cto-app/cto/ai_studio_code.json'
+        if not os.path.exists(json_file_path):
+            self.stdout.write(self.style.ERROR(f'File not found: {json_file_path}'))
             return
 
+        self.stdout.write(f"Reading {json_file_path}...")
         try:
-            df = pd.read_excel(file_path, header=1)
+            with open(json_file_path, 'r') as f:
+                data = json.load(f)
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error reading excel: {e}'))
+            self.stdout.write(self.style.ERROR(f'Error reading JSON: {e}'))
             return
-        
-        # Forward fill Section Officer and CSI
-        df['Section Officer'] = df['Section Officer'].ffill()
-        df['CSI'] = df['CSI'].ffill()
-        
-        # Drop rows where Station is NaN
-        df = df.dropna(subset=['Station'])
 
-        for index, row in df.iterrows():
-            officer_name = str(row['Section Officer']).strip()
-            csi_name = str(row['CSI']).strip()
-            station_name = str(row['Station']).strip()
-            
-            if officer_name == 'nan' or csi_name == 'nan':
-                continue
-
-            # Create or Get Sectional Officer
+        for officer_name, csi_data in data.items():
+            # Create Sectional Officer
             officer_code = officer_name.replace(" ", "_").replace("/", "_").upper()
             officer_obj, _ = SectionalOfficer.objects.get_or_create(
                 name=officer_name,
                 defaults={'code': officer_code}
             )
+            self.stdout.write(f"Processing Officer: {officer_name}")
 
-            # Create or Get CSI Unit
-            csi_obj, _ = CSIUnit.objects.get_or_create(
-                name=csi_name,
-                sectional_officer=officer_obj
-            )
-
-            # Create Station
-            # Use station name as code, replacing spaces with underscores
-            station_code = station_name.replace(" ", "_").upper()
-            
-            # Check if station exists (to avoid duplicates if excel has duplicates)
-            if not Station.objects.filter(code=station_code).exists():
-                Station.objects.create(
-                    code=station_code,
-                    name=station_name,
-                    csi_unit=csi_obj
+            for csi_name, si_data in csi_data.items():
+                # Create CSI Unit
+                csi_obj, _ = CSIUnit.objects.get_or_create(
+                    name=csi_name,
+                    sectional_officer=officer_obj
                 )
 
-        # 4. Seed SI Units
-        si_mapping = {
-          "ADI RRI": ["ADI RRI"],
-          "ADI": ["SI VTA", "SI ASV", "SI HMT"],
-          "SBI": ["SI SHB", "SI SBI", "SI SAU", "SI VG"],
-          "KLL": ["SI KLL", "SI GNC", "SI UMN"],
-          "MSH Br": ["SI Br. MSH", "MSH RRI", "SI PTN"],
-          "MSH N": ["SI KTRD", "SI PNU", "SI SID", "SI N MSH", "PNU RRI"],
-          "PNU": ["SI Br. PNU", "SI DEOR", "SI BLDI"],
-          "RDHP": ["SI RDHP", "SI SNLR", "SI RRI"],
-          "GIM": ["SI AI", "SI BHUJ", "SI Br.GIM"],
-          "SIOB Br": ["SI BCOB", "SIOB/BR", "SI AAR"],
-          "DHG": ["SI DHG RRI", "SI Br DHG", "SI HVD"],
-          "MALB": ["SI MALB", "SI SIOB"],
-          "VG": ["SI VG RRI", "SI BAJN", "SI JTX", "SI BKD"]
-        }
+                for si_name, si_details in si_data.items():
+                    # Create SI Unit
+                    si_obj, _ = SIUnit.objects.get_or_create(
+                        name=si_name,
+                        csi_unit=csi_obj
+                    )
 
-        self.stdout.write("Seeding SI Units...")
-        for csi_name, si_list in si_mapping.items():
-            # Find the CSI Unit. Note: CSI names in DB might differ slightly from this list if Excel was different.
-            csi_units = CSIUnit.objects.filter(name=csi_name)
-            if not csi_units.exists():
-                self.stdout.write(self.style.WARNING(f"CSI Unit '{csi_name}' not found for SI seeding."))
-                continue
-            
-            for csi_obj in csi_units:
-                for si_name in si_list:
-                    SIUnit.objects.get_or_create(name=si_name, csi_unit=csi_obj)
+                    stations_dict = si_details.get('stations', {})
+                    for station_name, station_code in stations_dict.items():
+                        # Create Station
+                        # Using update_or_create to handle potential duplicates in JSON gracefully
+                        # though we cleared the DB, so create should be fine if JSON is clean.
+                        Station.objects.update_or_create(
+                            code=station_code,
+                            defaults={
+                                'name': station_name,
+                                'csi_unit': csi_obj,
+                                'si_unit': si_obj
+                            }
+                        )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded database from Excel and SI Units!'))
+        self.stdout.write(self.style.SUCCESS('Successfully seeded database from JSON!'))
